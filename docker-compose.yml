@@ -1,0 +1,44 @@
+# ─── EcoTrack ERP - Docker Compose ──────────────────────────
+# Usage:
+#   docker compose up -d           (start everything)
+#   docker compose logs -f app     (view app logs)
+#   docker compose down            (stop everything)
+#   docker compose down -v         (stop and delete data)
+
+services:
+  # ── PostgreSQL Database ──────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: ecotrack-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ecotrack
+      POSTGRES_PASSWORD: ecotrack_secret
+      POSTGRES_DB: ecotrack
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecotrack -d ecotrack"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Next.js Application ─────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecotrack-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://ecotrack:ecotrack_secret@db:5432/ecotrack
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
