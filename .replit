@@ -1,0 +1,20 @@
+run = "npm run dev"
+entrypoint = "src/app/page.tsx"
+
+[nix]
+channel = "stable-24_05"
+
+[env]
+DATABASE_URL = ""
+
+[languages.javascript]
+pattern = "**/{*.js,*.jsx,*.ts,*.tsx}"
+
+[languages.javascript.languageServer]
+name = "typescript-language-server"
+command = "npx"
+
+[deployment]
+run = ["sh", "-c", "npm run build && npm run start"]
+build = ["sh", "-c", "npm install && npx drizzle-kit push"]
+deploymentTarget = "cloudrun"
