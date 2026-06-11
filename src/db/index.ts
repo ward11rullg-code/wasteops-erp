@@ -3,24 +3,27 @@ import { Pool } from "pg";
 
 const databaseUrl = process.env.DATABASE_URL;
 
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL is required");
-}
-
 const globalForDb = globalThis as typeof globalThis & {
   __arenaNextJsPostgresqlPool?: Pool;
 };
 
-// Determine if SSL is needed (cloud databases like Neon, Supabase require it)
-const isLocalDb =
-  databaseUrl.includes("localhost") || databaseUrl.includes("127.0.0.1");
+function createPool() {
+  if (!databaseUrl) {
+    throw new Error(
+      "DATABASE_URL is not set. Please add it in Vercel: Settings → Environment Variables"
+    );
+  }
 
-export const pool =
-  globalForDb.__arenaNextJsPostgresqlPool ??
-  new Pool({
+  const isLocal =
+    databaseUrl.includes("localhost") || databaseUrl.includes("127.0.0.1");
+
+  return new Pool({
     connectionString: databaseUrl,
-    ssl: isLocalDb ? false : { rejectUnauthorized: false },
+    ssl: isLocal ? false : { rejectUnauthorized: false },
   });
+}
+
+export const pool = globalForDb.__arenaNextJsPostgresqlPool ?? createPool();
 
 if (process.env.NODE_ENV !== "production") {
   globalForDb.__arenaNextJsPostgresqlPool = pool;
